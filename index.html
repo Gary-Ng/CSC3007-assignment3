@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <svg viewBox="0 0 1500 700">
+        <g id="districts"></g>
+        <g transform="translate(1000,200)">
+            <g class="legendCells" transform="translate(0,15)">
+                <g class="cell" transform="translate(0,0)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(227, 248, 250); "></rect>
+                    <text class="label" transform="translate(80,12)" style="text-anchor: middle;"> <100</text>
+                </g>
+                <g class="cell" transform="translate(0,20)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(154, 217, 237); "></rect>
+                    <text class="label" transform="translate(90,12)" style="text-anchor: middle;">100-500</text>
+                </g>
+                <g class="cell" transform="translate(0,40)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(112, 192, 228); "></rect>
+                    <text class="label" transform="translate(100,12)" style="text-anchor: middle;">500 - 1000</text>
+                </g>
+                <g class="cell" transform="translate(0,60)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(69, 167, 220); "></rect>
+                    <text class="label" transform="translate(102,12)" style="text-anchor: middle;">1000 - 5000</text>
+                </g>
+                <g class="cell" transform="translate(0,80)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(18, 141, 210); "></rect>
+                    <text class="label" transform="translate(107,12)" style="text-anchor: middle;">5000 - 10000</text>
+                </g>
+                <g class="cell" transform="translate(0,100)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(0, 115, 198); "></rect>
+                    <text class="label" transform="translate(110,12)" style="text-anchor: middle;">10000 - 25000</text>
+                </g>
+                <g class="cell" transform="translate(0,120)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(0, 87, 183);"></rect>
+                    <text class="label" transform="translate(110,12)" style="text-anchor: middle;">25000 - 50000</text>
+                </g>
+                <g class="cell" transform="translate(0,140)">
+                    <rect class="swatch" height="15" width="60" style="fill: rgb(29, 57, 162);"></rect>
+                    <text class="label" transform="translate(90,12)" style="text-anchor: middle;">>50000</text>
+                </g>
+            </g>
+            <text class="legendTitle">Population Count</text>
+        </g>
+    </svg>
+    <div class="tooltip"></div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+
+
+        let width = 1550, height = 750;
+
+        let svg = d3.select("svg")
+            .attr("viewBox", "0 0 " + width + " " + height)
+
+        // Load external data
+        Promise.all([
+            d3.json("sgmap.json"),
+            d3.csv("population2021.csv"),
+        ]).then((data) => {
+
+            var labels = [100, 500, 1000, 5000, 10000, 25000, 50000];
+            var ranges = ["<100", "100 - 500", "500 - 1000", "1000 - 5000", "5000 - 10000", "10000 - 50000", ">50000"]
+            var colorScheme = ["#e3f8fa", "#9ad9ed", "#70c0e4", "#45a7dc", "#128dd2", "#0073c6", "#0057b7", "#1d39a2", ]
+
+            populationData = [];
+            data[0].features.forEach((map) => {
+                data[1].forEach((data) => {
+                    if (
+                        map.properties.Name.toUpperCase() == data.Subzone.toUpperCase()
+                    ) {
+                        populationData[map.properties.Name] = data.Population;
+                    }
+                    maxPop = Math.max(data.Population);
+                });
+            });
+
+
+            var colorScale = d3.scaleThreshold()
+                .domain(labels)
+                .range(colorScheme);
+
+
+            var projection = d3
+                .geoMercator()
+                .center([103.851959, 1.29027])
+                .fitExtent(
+                    [
+                        [20, 20],
+                        [980, 580],
+                    ],
+                    data[0]
+                );
+
+            let geopath = d3.geoPath().projection(projection)
+
+            svg.append("g")
+                .attr("id", "districts")
+                .selectAll("path")
+                .data(data[0].features)
+                .enter()
+                .append("path")
+                .attr("d", geopath)
+                // set the color of each country
+                .attr("fill", function (d) {
+                    result = data[1].find(s => s["Planning Area"].toLowerCase() == d.properties["Planning Area Name"].toLowerCase() &&
+                        s["Subzone"].toLowerCase().includes(d.properties["Subzone Name"].toLowerCase()));
+
+                    if (result != undefined) {
+                        if (result["Population"] == "-") {
+                            return colorScale(0);
+                        } else {
+
+                            return colorScale(result["Population"]);
+                        }
+                    } else {
+
+                        result = data[1].find(s =>
+                            s["Planning Area"].toLowerCase() == d.properties["Planning Area Name"].toLowerCase());
+                        console.log(result)
+                        if (result["Population"] == "-") {
+                            return colorScale(0);
+                        } else {
+
+                            return colorScale(result["Population"]);
+                        }
+                    }
+
+                })
+                .style("stroke", "gray")
+                .style("opacity", 1.0)
+                .attr("stroke-width", 1.0)
+                .attr("class", function (d) {
+                    return "district"
+                })
+                //Adding mouseevents
+                .on("mouseover", (event, d) => {
+                    d3.select(".tooltip")
+                        .transition()
+                        .duration(300)
+                        .style("opacity", 2)
+                        .style("position", "absolute")
+                        .style("background", "#fff")
+                        .text("Location: " + d.properties.Name + " Population: " + populationData[d.properties.Name])
+                        .style("left", (event.pageX) + "px")
+                        .style("top", (event.pageY) + "px");
+
+                    d3.select(event.currentTarget)
+                        .style("stroke", "red")
+                        .style("stroke-width", 1.5)
+                        .style("opacity", 2)
+                        .duration(300)
+                        .classed("selected", true);
+                })
+
+                .on("mouseout", (event, d) => {
+                    d3.select(".tooltip")
+                        .transition()
+                        .duration(50)
+                        .style("opacity", 0);
+
+                    d3.select(event.currentTarget)
+                        .style("stroke", "black")
+                        .style("stroke-width", 0.5)
+                        .style("opacity", 0.5)
+                        .classed("selected", false);
+
+
+                });
+            var legend_x = 0
+            var legend_y = 15
+
+            svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", "translate(" + legend_x + "," + legend_y + ")");
+
+            /*var legend = d3.legendColor()
+                .labels(labels)
+                .title("Population")
+                .scale(colorScale)
+
+            svg.select(".legend")
+                .call(legend);*/
+        });
+
+            //});
+
+
+    </script>
+</body>
+</html>
