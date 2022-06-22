@@ -4,47 +4,12 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 </head>
 <body>
     <svg viewBox="0 0 1500 700">
         <g id="districts"></g>
-        <g transform="translate(1000,200)">
-            <g class="legendCells" transform="translate(0,15)">
-                <g class="cell" transform="translate(0,0)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(227, 248, 250); "></rect>
-                    <text class="label" transform="translate(80,12)" style="text-anchor: middle;"> <100</text>
-                </g>
-                <g class="cell" transform="translate(0,20)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(154, 217, 237); "></rect>
-                    <text class="label" transform="translate(90,12)" style="text-anchor: middle;">100-500</text>
-                </g>
-                <g class="cell" transform="translate(0,40)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(112, 192, 228); "></rect>
-                    <text class="label" transform="translate(100,12)" style="text-anchor: middle;">500 - 1000</text>
-                </g>
-                <g class="cell" transform="translate(0,60)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(69, 167, 220); "></rect>
-                    <text class="label" transform="translate(102,12)" style="text-anchor: middle;">1000 - 5000</text>
-                </g>
-                <g class="cell" transform="translate(0,80)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(18, 141, 210); "></rect>
-                    <text class="label" transform="translate(107,12)" style="text-anchor: middle;">5000 - 10000</text>
-                </g>
-                <g class="cell" transform="translate(0,100)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(0, 115, 198); "></rect>
-                    <text class="label" transform="translate(110,12)" style="text-anchor: middle;">10000 - 25000</text>
-                </g>
-                <g class="cell" transform="translate(0,120)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(0, 87, 183);"></rect>
-                    <text class="label" transform="translate(110,12)" style="text-anchor: middle;">25000 - 50000</text>
-                </g>
-                <g class="cell" transform="translate(0,140)">
-                    <rect class="swatch" height="15" width="60" style="fill: rgb(29, 57, 162);"></rect>
-                    <text class="label" transform="translate(90,12)" style="text-anchor: middle;">>50000</text>
-                </g>
-            </g>
-            <text class="legendTitle">Population Count</text>
-        </g>
     </svg>
     <div class="tooltip"></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -64,7 +29,7 @@
 
             var labels = [100, 500, 1000, 5000, 10000, 25000, 50000];
             var ranges = ["<100", "100 - 500", "500 - 1000", "1000 - 5000", "5000 - 10000", "10000 - 50000", ">50000"]
-            var colorScheme = ["#e3f8fa", "#9ad9ed", "#70c0e4", "#45a7dc", "#128dd2", "#0073c6", "#0057b7", "#1d39a2", ]
+            var colorScheme = ["#e3f8fa", "#9ad9ed", "#45a7dc", "#128dd2", "#0073c6", "#0057b7", "#1d39a2", ]
 
             populationData = [];
             data[0].features.forEach((map) => {
@@ -96,6 +61,14 @@
                 );
 
             let geopath = d3.geoPath().projection(projection)
+
+            var legend = d3
+                .legendColor()
+                .scale(colorScale)
+                .shapeWidth(60)
+                .labels(ranges)
+                .orient("vertical")
+                .title("Population Count");
 
             svg.append("g")
                 .attr("id", "districts")
@@ -170,23 +143,9 @@
 
 
                 });
-            var legend_x = 0
-            var legend_y = 15
+            svg.append("g").attr("transform", "translate(1000,100)").call(legend);
 
-            svg.append("g")
-                .attr("class", "legend")
-                .attr("transform", "translate(" + legend_x + "," + legend_y + ")");
-
-            /*var legend = d3.legendColor()
-                .labels(labels)
-                .title("Population")
-                .scale(colorScale)
-
-            svg.select(".legend")
-                .call(legend);*/
-        });
-
-            //});
+            });
 
 
     </script>
